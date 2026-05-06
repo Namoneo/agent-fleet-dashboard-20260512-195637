@@ -6,18 +6,19 @@ import { X, Plus, FolderKanban, Cpu, AlertCircle, CheckCircle2 } from 'lucide-re
 interface CreateTaskModalProps {
   projects: any[];
   agents: any[];
+  preSelectedAgent?: any;
   onClose: () => void;
   onCreated: () => void;
 }
 
-export function CreateTaskModal({ projects, agents, onClose, onCreated }: CreateTaskModalProps) {
+export function CreateTaskModal({ projects, agents, preSelectedAgent, onClose, onCreated }: CreateTaskModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [projectId, setProjectId] = useState('');
   const [priority, setPriority] = useState('medium');
-  const [assignedAgentId, setAssignedAgentId] = useState('');
+  const [assignedAgentId, setAssignedAgentId] = useState(preSelectedAgent?.id?.toString() || '');
   const [submitting, setSubmitting] = useState(false);
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(preSelectedAgent ? 2 : 1);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

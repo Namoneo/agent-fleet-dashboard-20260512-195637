@@ -6,13 +6,14 @@ import { AgentBoard } from './AgentBoard';
 import { TaskList } from './TaskList';
 import { ActivityFeed } from './ActivityFeed';
 import { CreateTaskModal } from './CreateTaskModal';
-import { Plus, LayoutDashboard, FolderKanban, Bot, CheckSquare2, Bell } from 'lucide-react';
+import { Plus, LayoutDashboard, FolderKanban, Bot, CheckSquare2, Bell, Grid3X3, List, LayoutGrid } from 'lucide-react';
 
 export function Dashboard() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [showAllProjects, setShowAllProjects] = useState(false);
+  const [projectView, setProjectView] = useState('grid');
 
   useEffect(() => {
     fetchData();
@@ -48,6 +49,8 @@ export function Dashboard() {
   const activeTasks = tasks?.filter((t: any) => t.status !== 'done') || [];
   const completedTasks = tasks?.filter((t: any) => t.status === 'done') || [];
   const idleAgents = agents?.filter((a: any) => a.status === 'idle') || [];
+
+  const displayedProjects = showAllProjects ? projects : projects?.slice(0, 9);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-100">
@@ -127,35 +130,63 @@ export function Dashboard() {
                   <FolderKanban className="w-5 h-5 text-gray-700" />
                   <h2 className="text-lg font-semibold text-gray-900">Projects</h2>
                   <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                    {projects?.length || 0}
+                    {showAllProjects ? projects?.length : `${Math.min(9, projects?.length || 0)} of ${projects?.length}`}
                   </span>
                 </div>
-                <div className="flex gap-1 bg-gray-100/80 p-1 rounded-lg">
-                  {['overview', 'grid', 'list'].map((tab) => (
+                <div className="flex items-center gap-2">
+                  {/* Grid/List Toggle */}
+                  <div className="flex gap-1 bg-gray-100/80 p-1 rounded-lg">
                     <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
-                        activeTab === tab
+                      onClick={() => setProjectView('grid')}
+                      className={`p-2 rounded-md transition-all ${
+                        projectView === 'grid'
                           ? 'bg-white text-gray-900 shadow-sm'
                           : 'text-gray-500 hover:text-gray-700'
                       }`}
+                      title="Grid view"
                     >
-                      {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                      <LayoutGrid className="w-4 h-4" />
                     </button>
-                  ))}
+                    <button
+                      onClick={() => setProjectView('list')}
+                      className={`p-2 rounded-md transition-all ${
+                        projectView === 'list'
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                      title="List view"
+                    >
+                      <List className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                {projects?.slice(0, 9).map((project: any, i: number) => (
-                  <ProjectCard key={project.id} project={project} index={i} />
-                ))}
-              </div>
+              {/* Projects Display */}
+              {projectView === 'grid' ? (
+                <div className="grid grid-cols-3 gap-4">
+                  {displayedProjects?.map((project: any, i: number) => (
+                    <ProjectCard key={project.id} project={project} index={i} viewMode="grid" />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {displayedProjects?.map((project: any, i: number) => (
+                    <ProjectCard key={project.id} project={project} index={i} viewMode="list" />
+                  ))}
+                </div>
+              )}
 
+              {/* View All / Show Less Toggle */}
               {projects?.length > 9 && (
-                <button className="w-full mt-4 py-3 text-sm text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors font-medium">
-                  View all {projects.length} projects →
+                <button 
+                  onClick={() => setShowAllProjects(!showAllProjects)}
+                  className="w-full mt-4 py-3 text-sm font-medium text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors"
+                >
+                  {showAllProjects 
+                    ? `← Show less` 
+                    : `View all ${projects.length} projects →`
+                  }
                 </button>
               )}
             </section>
@@ -163,7 +194,11 @@ export function Dashboard() {
             {/* Tasks & Agent Board */}
             <div className="grid grid-cols-2 gap-6">
               <TaskList tasks={tasks} />
-              <AgentBoard agents={agents} />
+              <AgentBoard 
+                agents={agents} 
+                projects={projects}
+                onTaskCreated={fetchData}
+              />
             </div>
           </div>
 
