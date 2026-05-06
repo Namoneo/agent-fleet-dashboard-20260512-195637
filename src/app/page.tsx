@@ -1,0 +1,12 @@
+import { initDb } from '@/lib/db';
+import { Dashboard } from '@/components/Dashboard';
+
+export default function Home() {
+  initDb();
+  
+  return (
+    <main className="min-h-screen bg-gray-50">
+      <Dashboard />
+    </main>
+  );
+}
