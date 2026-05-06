@@ -1,10 +1,13 @@
 import Database from 'better-sqlite3';
+import { resolve } from 'path';
+
+const DB_PATH = resolve('/Users/sherzodsanakulov/.openclaw/workspace/project-dashboard', 'dashboard.db');
 
 let db: Database.Database | null = null;
 
 export function getDb() {
   if (!db) {
-    db = new Database('./dashboard.db');
+    db = new Database(DB_PATH);
     db.pragma('journal_mode = WAL');
   }
   return db;
