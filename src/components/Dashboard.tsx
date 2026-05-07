@@ -6,17 +6,21 @@ import { AgentBoard } from './AgentBoard';
 import { TaskList } from './TaskList';
 import { ActivityFeed } from './ActivityFeed';
 import { CreateTaskModal } from './CreateTaskModal';
-import { Plus, LayoutDashboard, FolderKanban, Bot, CheckSquare2, Bell, Grid3X3, List, LayoutGrid } from 'lucide-react';
+import { FleetDispatcher } from './FleetDispatcher';
+import { Plus, LayoutDashboard, FolderKanban, Bot, CheckSquare2, Bell, List, LayoutGrid, Rocket } from 'lucide-react';
 
 export function Dashboard() {
   const [data, setData] = useState<any>(null);
+  const [templates, setTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDispatcher, setShowDispatcher] = useState(false);
   const [showAllProjects, setShowAllProjects] = useState(false);
   const [projectView, setProjectView] = useState('grid');
 
   useEffect(() => {
     fetchData();
+    fetchTemplates();
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -31,6 +35,45 @@ export function Dashboard() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function fetchTemplates() {
+    try {
+      const res = await fetch('/api/templates');
+      const json = await res.json();
+      setTemplates(json);
+    } catch (e) {
+      console.error('Failed to fetch templates', e);
+    }
+  }
+
+  async function handleDispatch(payload: any) {
+    // Create a task first
+    const taskRes = await fetch('/api/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        project_id: parseInt(payload.projectId),
+        title: payload.prompt.substring(0, 50) + '...',
+        description: payload.prompt,
+        priority: payload.priority,
+        assigned_agent_id: parseInt(payload.agentId),
+      }),
+    });
+
+    const task = await taskRes.json();
+
+    // Then launch the agent
+    await fetch(`/api/agents/${payload.agentId}/run`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        task_id: task.id,
+        command: `echo "Task: ${payload.prompt}"`,
+      }),
+    });
+
+    fetchData();
   }
 
   if (loading) {
@@ -73,6 +116,16 @@ export function Dashboard() {
                 <Bell className="w-5 h-5 text-gray-600" />
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
               </button>
+              
+              {/* Fleet Dispatcher Button */}
+              <button
+                onClick={() => setShowDispatcher(true)}
+                className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all active:scale-95"
+              >
+                <Rocket className="w-4 h-4" />
+                Dispatch Fleet
+              </button>
+              
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all active:scale-95"
@@ -209,13 +262,23 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Create Task Modal */}
+      {/* Modals */}
       {showCreateModal && (
         <CreateTaskModal
           projects={projects}
           agents={agents}
           onClose={() => setShowCreateModal(false)}
           onCreated={fetchData}
+        />
+      )}
+
+      {showDispatcher && (
+        <FleetDispatcher
+          projects={projects}
+          agents={agents}
+          templates={templates}
+          onDispatch={handleDispatch}
+          onClose={() => setShowDispatcher(false)}
         />
       )}
     </div>
