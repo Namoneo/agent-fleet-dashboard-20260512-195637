@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#09090b">
+  <title>Fleet</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      background: #09090b; 
+      color: #fafafa; 
+      padding: 16px; 
+      padding-bottom: 100px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-bottom: 20px;
+      padding-top: env(safe-area-inset-top);
+    }
+    .logo { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+    .logo span { font-size: 24px; }
+    .bell { 
+      width: 40px; 
+      height: 40px; 
+      border-radius: 12px; 
+      background: #18181b; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-size: 18px;
+      position: relative;
+    }
+    .bell::after {
+      content: '';
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 8px;
+      height: 8px;
+      background: #ef4444;
+      border-radius: 50%;
+      border: 2px solid #18181b;
+    }
+    
+    .stats { 
+      display: grid; 
+      grid-template-columns: repeat(3, 1fr); 
+      gap: 10px; 
+      margin-bottom: 24px; 
+    }
+    .stat { 
+      background: #18181b; 
+      border-radius: 20px; 
+      padding: 16px 8px; 
+      text-align: center;
+      border: 1px solid #27272a;
+    }
+    .stat-value { 
+      font-size: 28px; 
+      font-weight: 800; 
+      color: #818cf8;
+      line-height: 1;
+    }
+    .stat-label { 
+      font-size: 11px; 
+      color: #a1a1aa; 
+      margin-top: 6px;
+      font-weight: 500;
+    }
+    
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .section-title { 
+      font-size: 17px; 
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    .view-all {
+      font-size: 13px;
+      color: #818cf8;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    
+    .project { 
+      background: #18181b; 
+      border-radius: 20px; 
+      padding: 18px; 
+      margin-bottom: 12px; 
+      display: flex; 
+      align-items: center; 
+      gap: 14px;
+      border: 1px solid #27272a;
+      transition: transform 0.15s ease;
+    }
+    .project:active { transform: scale(0.98); }
+    .project-icon { 
+      font-size: 36px; 
+      width: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #27272a;
+      border-radius: 16px;
+    }
+    .project-info { flex: 1; min-width: 0; }
+    .project-name { 
+      font-weight: 700; 
+      font-size: 15px;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .project-desc { 
+      font-size: 13px; 
+      color: #a1a1aa;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .project-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .badge-active {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+    }
+    .project-count {
+      font-size: 12px;
+      color: #71717a;
+    }
+    
+    .agents-scroll {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .agents-scroll::-webkit-scrollbar { display: none; }
+    
+    .agent-card {
+      background: #18181b;
+      border-radius: 20px;
+      padding: 18px 14px;
+      min-width: 120px;
+      text-align: center;
+      border: 1px solid #27272a;
+    }
+    .agent-avatar {
+      font-size: 32px;
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 10px;
+      position: relative;
+    }
+    .agent-status {
+      position: absolute;
+      bottom: -2px;
+      right: -2px;
+      width: 14px;
+      height: 14px;
+      background: #22c55e;
+      border-radius: 50%;
+      border: 3px solid #18181b;
+    }
+    .agent-name {
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+    .agent-type {
+      font-size: 11px;
+      color: #a1a1aa;
+    }
+    
+    .task-item {
+      background: #18181b;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      border: 1px solid #27272a;
+    }
+    .task-icon {
+      font-size: 20px;
+      margin-top: 2px;
+    }
+    .task-info { flex: 1; }
+    .task-title {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+    .task-project {
+      font-size: 12px;
+      color: #71717a;
+    }
+    .task-priority {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 12px;
+      margin-top: 8px;
+      display: inline-block;
+    }
+    .priority-high {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+    }
+    .priority-medium {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+    }
+    .priority-low {
+      background: rgba(161, 161, 170, 0.15);
+      color: #a1a1aa;
+    }
+    
+    .fab {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 58px;
+      height: 58px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: white;
+      border: none;
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+      z-index: 100;
+      cursor: pointer;
+      -webkit-appearance: none;
+    }
+    .fab:active { transform: scale(0.92); }
+    
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(24, 24, 27, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      display: flex;
+      justify-content: space-around;
+      padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
+      border-top: 1px solid #27272a;
+      z-index: 99;
+    }
+    .nav-item {
+      text-align: center;
+      color: #a1a1aa;
+      text-decoration: none;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 4px 16px;
+      border-radius: 12px;
+      transition: all 0.2s;
+    }
+    .nav-item.active {
+      color: #818cf8;
+      background: rgba(99, 102, 241, 0.1);
+    }
+    .nav-icon {
+      font-size: 22px;
+      display: block;
+      margin-bottom: 4px;
+    }
+    
+    .divider {
+      height: 1px;
+      background: #27272a;
+      margin: 24px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo"><span>🚀</span> Fleet</div>
+    <div class="bell">🔔</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-value">33</div>
+      <div class="stat-label">Projects</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" style="color: #4ade80;">6</div>
+      <div class="stat-label">Active</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" style="color: #fbbf24;">4</div>
+      <div class="stat-label">Agents</div>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title">Recent Projects</div>
+    <a href="#" class="view-all">View all →</a>
+  </div>
+
+  <div class="project">
+    <div class="project-icon">🛒</div>
+    <div class="project-info">
+      <div class="project-name">Deal-hunter</div>
+      <div class="project-desc">Dutch grocery deal scraper</div>
+      <div class="project-meta">
+        <span class="badge badge-active">Active</span>
+        <span class="project-count">📋 4 tasks</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="project">
+    <div class="project-icon">📝</div>
+    <div class="project-info">
+      <div class="project-name">User Story Generator</div>
+      <div class="project-desc">AI-powered story creation</div>
+      <div class="project-meta">
+        <span class="badge badge-active">Active</span>
+        <span class="project-count">📋 2 tasks</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="project">
+    <div class="project-icon">🤖</div>
+    <div class="project-info">
+      <div class="project-name">LocalSiteAI</div>
+      <div class="project-desc">Local AI site builder</div>
+      <div class="project-meta">
+        <span class="badge badge-active">Active</span>
+        <span class="project-count">📋 0 tasks</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="project">
+    <div class="project-icon">📊</div>
+    <div class="project-info">
+      <div class="project-name">Melanium</div>
+      <div class="project-desc">Project management tool</div>
+      <div class="project-meta">
+        <span class="badge badge-active">Active</span>
+        <span class="project-count">📋 0 tasks</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-header">
+    <div class="section-title">Active Agents</div>
+    <a href="#" class="view-all">View all →</a>
+  </div>
+
+  <div class="agents-scroll">
+    <div class="agent-card">
+      <div class="agent-avatar">🧠<div class="agent-status"></div></div>
+      <div class="agent-name">Yordamchi</div>
+      <div class="agent-type">OpenClaw</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-avatar">💻<div class="agent-status"></div></div>
+      <div class="agent-name">Claude Code</div>
+      <div class="agent-type">Codex</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-avatar">🧠<div class="agent-status"></div></div>
+      <div class="agent-name">Gemini</div>
+      <div class="agent-type">OpenClaw</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-avatar">📱<div class="agent-status"></div></div>
+      <div class="agent-name">Telegram Bot</div>
+      <div class="agent-type">Telegram</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-header">
+    <div class="section-title">Active Tasks</div>
+    <a href="#" class="view-all">View all →</a>
+  </div>
+
+  <div class="task-item">
+    <div class="task-icon">🔄</div>
+    <div class="task-info">
+      <div class="task-title">Fix Lidl scraper images</div>
+      <div class="task-project">📁 Deal-hunter • 🤖 Claude Code</div>
+      <span class="task-priority priority-high">HIGH</span>
+    </div>
+  </div>
+
+  <div class="task-item">
+    <div class="task-icon">🔄</div>
+    <div class="task-info">
+      <div class="task-title">Build story generator UI</div>
+      <div class="task-project">📁 User Story Gen • 🤖 Gemini</div>
+      <span class="task-priority priority-high">HIGH</span>
+    </div>
+  </div>
+
+  <div class="task-item">
+    <div class="task-icon">⏳</div>
+    <div class="task-info">
+      <div class="task-title">Set up pgvector</div>
+      <div class="task-project">📁 User Story Gen • 🤖 Unassigned</div>
+      <span class="task-priority priority-medium">MEDIUM</span>
+    </div>
+  </div>
+
+  <button class="fab">+</button>
+
+  <nav class="bottom-nav">
+    <a href="#" class="nav-item active">
+      <span class="nav-icon">🏠</span>
+      Home
+    </a>
+    <a href="#" class="nav-item">
+      <span class="nav-icon">📁</span>
+      Projects
+    </a>
+    <a href="#" class="nav-item">
+      <span class="nav-icon">🤖</span>
+      Agents
+    </a>
+    <a href="#" class="nav-item">
+      <span class="nav-icon">✅</span>
+      Tasks
+    </a>
+  </nav>
+</body>
+</html>
