@@ -5,10 +5,11 @@ import { resolve } from 'path';
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const db = getDb();
-  const agentId = parseInt(params.id);
+  const agentId = parseInt(id);
   const body = await request.json();
   const { task_id, command, cwd, env = {} } = body;
 
@@ -96,10 +97,11 @@ export async function POST(
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const db = getDb();
-  const agentId = parseInt(params.id);
+  const agentId = parseInt(id);
   
   const runs = db.prepare(`
     SELECT r.*, a.name as agent_name, t.title as task_title

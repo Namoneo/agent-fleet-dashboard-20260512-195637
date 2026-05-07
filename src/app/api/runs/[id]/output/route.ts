@@ -3,10 +3,11 @@ import { getDb } from '@/lib/db';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const db = getDb();
-  const runId = parseInt(params.id);
+  const runId = parseInt(id);
 
   const outputs = db.prepare(`
     SELECT id, type, content, created_at
@@ -18,13 +19,13 @@ export async function GET(
   return NextResponse.json(outputs);
 }
 
-// For SSE streaming
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const db = getDb();
-  const runId = parseInt(params.id);
+  const runId = parseInt(id);
   const body = await request.json();
   const { type = 'stdout', content } = body;
 
