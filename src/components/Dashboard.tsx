@@ -7,7 +7,8 @@ import { TaskList } from './TaskList';
 import { ActivityFeed } from './ActivityFeed';
 import { CreateTaskModal } from './CreateTaskModal';
 import { FleetDispatcher } from './FleetDispatcher';
-import { Plus, LayoutDashboard, FolderKanban, Bot, CheckSquare2, Bell, List, LayoutGrid, Rocket } from 'lucide-react';
+import { AgentBattle } from './AgentBattle';
+import { Plus, LayoutDashboard, FolderKanban, Bot, CheckSquare2, Bell, List, LayoutGrid, Rocket, Swords } from 'lucide-react';
 
 export function Dashboard() {
   const [data, setData] = useState<any>(null);
@@ -15,6 +16,7 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDispatcher, setShowDispatcher] = useState(false);
+  const [showBattle, setShowBattle] = useState(false);
   const [showAllProjects, setShowAllProjects] = useState(false);
   const [projectView, setProjectView] = useState('grid');
 
@@ -124,6 +126,15 @@ export function Dashboard() {
               >
                 <Rocket className="w-4 h-4" />
                 Dispatch Fleet
+              </button>
+              
+              {/* Agent Battle Button */}
+              <button
+                onClick={() => setShowBattle(true)}
+                className="flex items-center gap-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 transition-all active:scale-95"
+              >
+                <Swords className="w-4 h-4" />
+                Battle
               </button>
               
               <button
@@ -279,6 +290,14 @@ export function Dashboard() {
           templates={templates}
           onDispatch={handleDispatch}
           onClose={() => setShowDispatcher(false)}
+        />
+      )}
+
+      {showBattle && (
+        <AgentBattle
+          projects={projects}
+          agents={agents}
+          onClose={() => setShowBattle(false)}
         />
       )}
     </div>
