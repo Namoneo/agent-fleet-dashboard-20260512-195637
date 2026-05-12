@@ -127,6 +127,30 @@ export function initDb() {
     )
   `);
 
+  // NEW: DAG workflows (Cursor cookbook integration)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS dag_workflows (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT,
+      dag_json TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // NEW: DAG executions for live canvas
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS dag_executions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workflow_id INTEGER NOT NULL,
+      status TEXT DEFAULT 'pending',
+      started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      completed_at DATETIME,
+      canvas_data TEXT,
+      FOREIGN KEY (workflow_id) REFERENCES dag_workflows(id)
+    )
+  `);
+
   // Seed if empty
   const projectCount = db.prepare('SELECT COUNT(*) as count FROM projects').get() as { count: number };
   if (projectCount.count === 0) {
@@ -191,11 +215,14 @@ function seedInitialData(db: Database.Database) {
     ('Documentation', 'Write or update documentation', '📝', 'low', 'openclaw', 'Write documentation for: {{description}}. Include examples and clear explanations.')
   `);
   seedTemplates.run();
+
+  // Seed DAG workflows (Cursor cookbook format)
+  seedDagWorkflows(db);
 }
 
 function updateAgentCommands(db: Database.Database) {
   const agents = db.prepare('SELECT id, name, type FROM agents WHERE cli_command IS NULL').all() as any[];
-  
+
   const commandMap: Record<string, { cmd: string; args: string[] }> = {
     'Claude Code': { cmd: 'claude', args: ['--print', '--permission-mode', 'bypassPermissions'] },
     'Codex': { cmd: 'codex', args: [] },
@@ -205,9 +232,258 @@ function updateAgentCommands(db: Database.Database) {
   };
 
   const update = db.prepare('UPDATE agents SET cli_command = ?, cli_args = ? WHERE id = ?');
-  
+
   for (const agent of agents) {
     const config = commandMap[agent.name] || { cmd: null, args: [] };
     update.run(config.cmd, JSON.stringify(config.args), agent.id);
+  }
+}
+
+function seedDagWorkflows(db: Database.Database) {
+  const count = db.prepare('SELECT COUNT(*) as count FROM dag_workflows').get() as { count: number };
+  if (count.count > 0) return;
+
+  const workflows = [
+    {
+      name: 'Bug Fix',
+      description: 'Systematic bug investigation and resolution workflow',
+      dag_json: JSON.stringify({
+        title: 'Bug Fix Workflow',
+        models: { HIGH: 'gpt-4', MED: 'claude-3-opus', LOW: 'auto-low' },
+        tasks: [
+          {
+            id: 'analyze-bug',
+            depends_on: [],
+            complexity: 'MED',
+            subtask_prompt: 'Analyze the reported bug. Read error logs, stack traces, and related code. Identify the root cause and affected components. Document your findings.'
+          },
+          {
+            id: 'reproduce-bug',
+            depends_on: ['analyze-bug'],
+            complexity: 'MED',
+            subtask_prompt: 'Create a minimal reproduction case for the bug. Write a test that fails due to the bug, or document exact steps to reproduce it reliably.'
+          },
+          {
+            id: 'implement-fix',
+            depends_on: ['reproduce-bug'],
+            complexity: 'HIGH',
+            subtask_prompt: 'Implement the fix for the bug based on your analysis. Write clean, minimal code changes. Ensure the fix addresses the root cause, not just symptoms.'
+          },
+          {
+            id: 'test-fix',
+            depends_on: ['implement-fix'],
+            complexity: 'MED',
+            subtask_prompt: 'Verify the fix works. Run the reproduction test to confirm it now passes. Add regression tests to prevent this bug from recurring.'
+          },
+          {
+            id: 'document-fix',
+            depends_on: ['test-fix'],
+            complexity: 'LOW',
+            subtask_prompt: 'Document what was fixed. Update CHANGELOG, add code comments if needed, and write a brief summary of the changes made.'
+          }
+        ]
+      })
+    },
+    {
+      name: 'Feature',
+      description: 'End-to-end feature development workflow',
+      dag_json: JSON.stringify({
+        title: 'Feature Development Workflow',
+        models: { HIGH: 'gpt-4', MED: 'claude-3-opus', LOW: 'auto-low' },
+        tasks: [
+          {
+            id: 'design-feature',
+            depends_on: [],
+            complexity: 'HIGH',
+            subtask_prompt: 'Design the feature architecture. Define the API, data models, and component structure. Create a technical specification document with implementation plan.'
+          },
+          {
+            id: 'setup-structure',
+            depends_on: ['design-feature'],
+            complexity: 'LOW',
+            subtask_prompt: 'Set up the basic file structure, routes, and boilerplate code for the feature. Create placeholder components and API endpoints.'
+          },
+          {
+            id: 'implement-backend',
+            depends_on: ['setup-structure'],
+            complexity: 'HIGH',
+            subtask_prompt: 'Implement the backend/API functionality. Write server-side logic, database queries, and API endpoints. Include validation and error handling.'
+          },
+          {
+            id: 'implement-frontend',
+            depends_on: ['setup-structure'],
+            complexity: 'HIGH',
+            subtask_prompt: 'Implement the frontend UI components. Build responsive interfaces, forms, and user interactions. Connect to backend APIs.'
+          },
+          {
+            id: 'integrate-feature',
+            depends_on: ['implement-backend', 'implement-frontend'],
+            complexity: 'MED',
+            subtask_prompt: 'Integrate frontend and backend. Wire up API calls, handle loading states and errors. Ensure end-to-end functionality works correctly.'
+          },
+          {
+            id: 'test-feature',
+            depends_on: ['integrate-feature'],
+            complexity: 'MED',
+            subtask_prompt: 'Write comprehensive tests. Include unit tests for logic, integration tests for APIs, and e2e tests for critical user flows.'
+          },
+          {
+            id: 'polish-feature',
+            depends_on: ['test-feature'],
+            complexity: 'LOW',
+            subtask_prompt: 'Polish the feature. Add loading states, error boundaries, animations, and edge case handling. Ensure accessibility and mobile responsiveness.'
+          }
+        ]
+      })
+    },
+    {
+      name: 'Refactor',
+      description: 'Code quality improvement without behavior changes',
+      dag_json: JSON.stringify({
+        title: 'Refactoring Workflow',
+        models: { HIGH: 'gpt-4', MED: 'claude-3-opus', LOW: 'auto-low' },
+        tasks: [
+          {
+            id: 'analyze-code',
+            depends_on: [],
+            complexity: 'MED',
+            subtask_prompt: 'Analyze the current codebase for refactoring opportunities. Identify code smells, duplication, and areas for improvement. Document the current state.'
+          },
+          {
+            id: 'plan-refactor',
+            depends_on: ['analyze-code'],
+            complexity: 'MED',
+            subtask_prompt: 'Plan the refactoring approach. Define the target architecture, identify breaking changes, and create a step-by-step migration plan.'
+          },
+          {
+            id: 'extract-components',
+            depends_on: ['plan-refactor'],
+            complexity: 'MED',
+            subtask_prompt: 'Extract reusable components and utilities. Break down large components, create shared hooks, and consolidate duplicated logic.'
+          },
+          {
+            id: 'improve-types',
+            depends_on: ['plan-refactor'],
+            complexity: 'LOW',
+            subtask_prompt: 'Improve TypeScript types and interfaces. Add strict typing, remove any types, and ensure type safety across the codebase.'
+          },
+          {
+            id: 'optimize-performance',
+            depends_on: ['extract-components'],
+            complexity: 'HIGH',
+            subtask_prompt: 'Optimize performance. Identify bottlenecks, add memoization, lazy load components, and optimize database queries or API calls.'
+          },
+          {
+            id: 'verify-behavior',
+            depends_on: ['improve-types', 'optimize-performance'],
+            complexity: 'MED',
+            subtask_prompt: 'Verify behavior is unchanged. Run all existing tests, perform manual testing, and ensure no regressions were introduced.'
+          }
+        ]
+      })
+    },
+    {
+      name: 'Code Review',
+      description: 'Comprehensive code review and quality assurance',
+      dag_json: JSON.stringify({
+        title: 'Code Review Workflow',
+        models: { HIGH: 'gpt-4', MED: 'claude-3-opus', LOW: 'auto-low' },
+        tasks: [
+          {
+            id: 'review-structure',
+            depends_on: [],
+            complexity: 'LOW',
+            subtask_prompt: 'Review code structure and organization. Check file organization, naming conventions, and module boundaries. Ensure consistency with project standards.'
+          },
+          {
+            id: 'check-logic',
+            depends_on: ['review-structure'],
+            complexity: 'HIGH',
+            subtask_prompt: 'Review business logic and algorithms. Check for correctness, edge cases, and potential bugs. Verify logic matches requirements.'
+          },
+          {
+            id: 'check-security',
+            depends_on: ['check-logic'],
+            complexity: 'HIGH',
+            subtask_prompt: 'Security review. Check for injection vulnerabilities, XSS, CSRF, authentication issues, and data exposure. Verify input validation and sanitization.'
+          },
+          {
+            id: 'check-performance',
+            depends_on: ['check-logic'],
+            complexity: 'MED',
+            subtask_prompt: 'Performance review. Check for N+1 queries, unnecessary re-renders, memory leaks, and inefficient algorithms. Suggest optimizations.'
+          },
+          {
+            id: 'check-testing',
+            depends_on: ['check-security', 'check-performance'],
+            complexity: 'MED',
+            subtask_prompt: 'Review test coverage. Check that critical paths are tested, tests are meaningful, and edge cases are covered. Suggest additional tests if needed.'
+          },
+          {
+            id: 'summarize-review',
+            depends_on: ['check-testing'],
+            complexity: 'LOW',
+            subtask_prompt: 'Summarize findings. Categorize issues by severity (critical/major/minor), provide actionable feedback, and highlight positive aspects of the code.'
+          }
+        ]
+      })
+    },
+    {
+      name: 'Documentation',
+      description: 'Create comprehensive documentation',
+      dag_json: JSON.stringify({
+        title: 'Documentation Workflow',
+        models: { HIGH: 'gpt-4', MED: 'claude-3-opus', LOW: 'auto-low' },
+        tasks: [
+          {
+            id: 'analyze-audience',
+            depends_on: [],
+            complexity: 'LOW',
+            subtask_prompt: 'Analyze the target audience for documentation. Identify user personas, their technical level, and what information they need. Define documentation scope.'
+          },
+          {
+            id: 'outline-structure',
+            depends_on: ['analyze-audience'],
+            complexity: 'LOW',
+            subtask_prompt: 'Create documentation outline. Define sections, topics, and organization. Plan for README, API docs, guides, and examples.'
+          },
+          {
+            id: 'write-overview',
+            depends_on: ['outline-structure'],
+            complexity: 'MED',
+            subtask_prompt: 'Write overview and getting started sections. Explain what the project does, key features, installation steps, and quick start guide.'
+          },
+          {
+            id: 'document-api',
+            depends_on: ['outline-structure'],
+            complexity: 'HIGH',
+            subtask_prompt: 'Document APIs and interfaces. Include endpoint descriptions, request/response formats, authentication, error codes, and code examples.'
+          },
+          {
+            id: 'write-guides',
+            depends_on: ['write-overview'],
+            complexity: 'MED',
+            subtask_prompt: 'Write how-to guides and tutorials. Create step-by-step instructions for common tasks, with working code examples and screenshots if relevant.'
+          },
+          {
+            id: 'add-examples',
+            depends_on: ['document-api'],
+            complexity: 'MED',
+            subtask_prompt: 'Create practical examples. Write complete, runnable code examples that demonstrate key features and common use cases.'
+          },
+          {
+            id: 'review-docs',
+            depends_on: ['write-guides', 'add-examples'],
+            complexity: 'LOW',
+            subtask_prompt: 'Review and polish documentation. Check for clarity, completeness, accuracy, and consistency. Fix typos and formatting issues.'
+          }
+        ]
+      })
+    }
+  ];
+
+  const insert = db.prepare('INSERT INTO dag_workflows (name, description, dag_json) VALUES (?, ?, ?)');
+  for (const wf of workflows) {
+    insert.run(wf.name, wf.description, wf.dag_json);
   }
 }

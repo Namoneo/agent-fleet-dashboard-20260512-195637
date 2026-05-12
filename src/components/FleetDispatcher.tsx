@@ -1,22 +1,26 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Rocket, FolderKanban, Cpu, LayoutGrid, Zap, CheckCircle2, Loader2, MessageSquare } from 'lucide-react';
+import { X, Rocket, FolderKanban, Cpu, LayoutGrid, Zap, CheckCircle2, Loader2, MessageSquare, GitBranch } from 'lucide-react';
+import { DagWorkflowSelector } from './DagWorkflowSelector';
 
 interface DispatcherProps {
   projects: any[];
   agents: any[];
   templates: any[];
   onDispatch: (payload: any) => Promise<void>;
+  onDispatchDag?: (payload: any) => Promise<void>;
   onClose: () => void;
 }
 
-export function FleetDispatcher({ projects, agents, templates, onDispatch, onClose }: DispatcherProps) {
+export function FleetDispatcher({ projects, agents, templates, onDispatch, onDispatchDag, onClose }: DispatcherProps) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [useDag, setUseDag] = useState(false);
   const [config, setConfig] = useState({
     projectId: '',
     templateId: '',
+    workflowId: '',
     agentId: '',
     prompt: '',
     priority: 'medium'
@@ -25,7 +29,11 @@ export function FleetDispatcher({ projects, agents, templates, onDispatch, onClo
   const handleDispatch = async () => {
     setLoading(true);
     try {
-      await onDispatch(config);
+      if (useDag && config.workflowId) {
+        await onDispatchDag?.(config);
+      } else {
+        await onDispatch(config);
+      }
       onClose();
     } catch (e) {
       console.error('Dispatch failed', e);
@@ -83,30 +91,50 @@ export function FleetDispatcher({ projects, agents, templates, onDispatch, onClo
             </div>
 
             <div className="space-y-4">
-              <label className="text-sm font-semibold text-zinc-400 flex items-center gap-2">
-                <Zap className="w-4 h-4" /> Task Template
-              </label>
-              <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                {templates.map(t => (
-                  <button 
-                    key={t.id}
-                    onClick={() => setConfig({...config, templateId: t.id.toString()})}
-                    className={`p-3 rounded-xl border transition-all text-left ${
-                      config.templateId === t.id.toString() 
-                      ? 'border-indigo-500 bg-indigo-500/10 text-white shadow-sm' 
-                      : 'border-zinc-800 bg-zinc-800/50 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-800'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg">{t.icon}</span>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">{t.name}</p>
-                        <p className="text-[10px] text-zinc-500 truncate">{t.description}</p>
-                      </div>
-                    </div>
-                  </button>
-                ))}
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-semibold text-zinc-400 flex items-center gap-2">
+                  <Zap className="w-4 h-4" /> {useDag ? 'DAG Workflow' : 'Task Template'}
+                </label>
+                <button
+                  onClick={() => {
+                    setUseDag(!useDag);
+                    setConfig({...config, templateId: '', workflowId: ''});
+                  }}
+                  className="text-xs flex items-center gap-1 text-indigo-400 hover:text-indigo-300 transition-colors"
+                >
+                  <GitBranch className="w-3 h-3" />
+                  {useDag ? 'Use Simple Template' : 'Use DAG Workflow'}
+                </button>
               </div>
+              
+              {useDag ? (
+                <DagWorkflowSelector
+                  selectedWorkflowId={config.workflowId}
+                  onSelect={(id) => setConfig({...config, workflowId: id})}
+                />
+              ) : (
+                <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                  {templates.map(t => (
+                    <button 
+                      key={t.id}
+                      onClick={() => setConfig({...config, templateId: t.id.toString()})}
+                      className={`p-3 rounded-xl border transition-all text-left ${
+                        config.templateId === t.id.toString() 
+                        ? 'border-indigo-500 bg-indigo-500/10 text-white shadow-sm' 
+                        : 'border-zinc-800 bg-zinc-800/50 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-800'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg">{t.icon}</span>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{t.name}</p>
+                          <p className="text-[10px] text-zinc-500 truncate">{t.description}</p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -150,11 +178,11 @@ export function FleetDispatcher({ projects, agents, templates, onDispatch, onClo
           <div className="pt-4">
             <button 
               onClick={handleDispatch}
-              disabled={loading || !config.projectId || !config.agentId || !config.prompt}
+              disabled={loading || !config.projectId || !config.agentId || !config.prompt || (useDag ? !config.workflowId : !config.templateId)}
               className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Rocket className="w-5 h-5" />}
-              {loading ? 'Launching Agent...' : 'Dispatch to Fleet'}
+              {loading ? 'Launching Agent...' : useDag ? 'Dispatch DAG Workflow' : 'Dispatch to Fleet'}
             </button>
           </div>
         </div>

@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import { ProjectCard } from './ProjectCard';
 import { AgentBoard } from './AgentBoard';
+import { AgentKanban } from './AgentKanban';
 import { TaskList } from './TaskList';
 import { ActivityFeed } from './ActivityFeed';
 import { CreateTaskModal } from './CreateTaskModal';
 import { FleetDispatcher } from './FleetDispatcher';
 import { AgentBattle } from './AgentBattle';
-import { Plus, LayoutDashboard, FolderKanban, Bot, CheckSquare2, Bell, List, LayoutGrid, Rocket, Swords } from 'lucide-react';
+import { DagCanvas } from './DagCanvas';
+import { Plus, LayoutDashboard, FolderKanban, Bot, CheckSquare2, Bell, List, LayoutGrid, Rocket, Swords, Columns, Kanban } from 'lucide-react';
 
 export function Dashboard() {
   const [data, setData] = useState<any>(null);
@@ -19,6 +21,8 @@ export function Dashboard() {
   const [showBattle, setShowBattle] = useState(false);
   const [showAllProjects, setShowAllProjects] = useState(false);
   const [projectView, setProjectView] = useState('grid');
+  const [agentView, setAgentView] = useState<'list' | 'kanban'>('list');
+  const [activeDagExecution, setActiveDagExecution] = useState<number | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -75,6 +79,36 @@ export function Dashboard() {
       }),
     });
 
+    fetchData();
+  }
+
+  async function handleDispatchDag(payload: any) {
+    // Create a DAG execution
+    const executionRes = await fetch('/api/dag-executions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        workflow_id: parseInt(payload.workflowId),
+      }),
+    });
+
+    const execution = await executionRes.json();
+    
+    // Create a task for tracking
+    await fetch('/api/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        project_id: parseInt(payload.projectId),
+        title: `DAG: ${execution.workflow_name}`,
+        description: payload.prompt,
+        priority: payload.priority,
+        assigned_agent_id: parseInt(payload.agentId),
+      }),
+    });
+
+    // Open the DAG canvas
+    setActiveDagExecution(execution.id);
     fetchData();
   }
 
@@ -258,11 +292,53 @@ export function Dashboard() {
             {/* Tasks & Agent Board */}
             <div className="grid grid-cols-2 gap-6">
               <TaskList tasks={tasks} />
-              <AgentBoard 
-                agents={agents} 
-                projects={projects}
-                onTaskCreated={fetchData}
-              />
+              <div>
+                {/* Agent View Toggle */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Bot className="w-5 h-5 text-gray-700" />
+                    <h2 className="text-lg font-semibold text-gray-900">Agent Fleet</h2>
+                  </div>
+                  <div className="flex gap-1 bg-gray-100/80 p-1 rounded-lg">
+                    <button
+                      onClick={() => setAgentView('list')}
+                      className={`p-2 rounded-md transition-all ${
+                        agentView === 'list'
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                      title="List view"
+                    >
+                      <Columns className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setAgentView('kanban')}
+                      className={`p-2 rounded-md transition-all ${
+                        agentView === 'kanban'
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                      title="Kanban view"
+                    >
+                      <Kanban className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                
+                {agentView === 'list' ? (
+                  <AgentBoard 
+                    agents={agents} 
+                    projects={projects}
+                    onTaskCreated={fetchData}
+                  />
+                ) : (
+                  <AgentKanban 
+                    agents={agents} 
+                    projects={projects}
+                    onTaskCreated={fetchData}
+                  />
+                )}
+              </div>
             </div>
           </div>
 
@@ -289,6 +365,7 @@ export function Dashboard() {
           agents={agents}
           templates={templates}
           onDispatch={handleDispatch}
+          onDispatchDag={handleDispatchDag}
           onClose={() => setShowDispatcher(false)}
         />
       )}
@@ -298,6 +375,13 @@ export function Dashboard() {
           projects={projects}
           agents={agents}
           onClose={() => setShowBattle(false)}
+        />
+      )}
+
+      {activeDagExecution && (
+        <DagCanvas
+          executionId={activeDagExecution}
+          onClose={() => setActiveDagExecution(null)}
         />
       )}
     </div>
