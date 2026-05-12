@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { ProjectCard } from './ProjectCard';
 import { AgentBoard } from './AgentBoard';
 import { AgentKanban } from './AgentKanban';
@@ -70,12 +71,13 @@ export function Dashboard() {
     const task = await taskRes.json();
 
     // Then launch the agent
-    await fetch(`/api/agents/${payload.agentId}/run`, {
+    await fetch(`/api/agents/${payload.agentId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         task_id: task.id,
         command: `echo "Task: ${payload.prompt}"`,
+        ...(payload.cwd ? { cwd: payload.cwd } : {}),
       }),
     });
 
@@ -148,10 +150,14 @@ export function Dashboard() {
             </div>
 
             <div className="flex items-center gap-3">
-              <button className="relative p-2 rounded-xl hover:bg-gray-100 transition-colors">
+              <Link
+                href="/activity"
+                className="relative p-2 rounded-xl hover:bg-gray-100 transition-colors"
+                title="Activity log"
+              >
                 <Bell className="w-5 h-5 text-gray-600" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" aria-hidden />
+              </Link>
               
               {/* Fleet Dispatcher Button */}
               <button

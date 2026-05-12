@@ -22,12 +22,19 @@ export async function GET() {
 export async function POST(request: Request) {
   const db = getDb();
   const body = await request.json();
-  const { name, type, skills, cli_command, cli_args, working_dir } = body;
+  const { name, type, skills, cli_command, cli_args, working_dir, worktree_paths } = body;
+
+  let worktree_paths_json: string | null = null;
+  if (Array.isArray(worktree_paths)) {
+    worktree_paths_json = JSON.stringify(
+      worktree_paths.filter((x: unknown) => typeof x === 'string' && String(x).trim())
+    );
+  }
 
   const result = db.prepare(`
-    INSERT INTO agents (name, type, status, skills, cli_command, cli_args, working_dir)
-    VALUES (?, ?, 'idle', ?, ?, ?, ?)
-  `).run(name, type, skills, cli_command, JSON.stringify(cli_args || []), working_dir);
+    INSERT INTO agents (name, type, status, skills, cli_command, cli_args, working_dir, worktree_paths)
+    VALUES (?, ?, 'idle', ?, ?, ?, ?, ?)
+  `).run(name, type, skills, cli_command, JSON.stringify(cli_args || []), working_dir ?? null, worktree_paths_json);
 
   const agent = db.prepare('SELECT * FROM agents WHERE id = ?').get(result.lastInsertRowid);
   return NextResponse.json(agent, { status: 201 });

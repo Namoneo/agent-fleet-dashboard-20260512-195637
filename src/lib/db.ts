@@ -1,14 +1,38 @@
 import Database from 'better-sqlite3';
-import { resolve } from 'path';
+import { mkdirSync } from 'fs';
+import { dirname, join, resolve } from 'path';
 
-const DB_PATH = resolve('/Users/sherzodsanakulov/.openclaw/workspace/project-dashboard', 'dashboard.db');
+function resolveDbPath(): string {
+  const fromEnv = process.env.DASHBOARD_DB_PATH;
+  if (typeof fromEnv === 'string' && fromEnv.trim() !== '') {
+    return resolve(fromEnv.trim());
+  }
+  return join(process.cwd(), '.data', 'dashboard.db');
+}
 
 let db: Database.Database | null = null;
 
+/** Lightweight ALTERs for existing DBs; safe to run repeatedly. */
+function patchAgentWorktreeSchema(database: Database.Database) {
+  try {
+    database.exec(`ALTER TABLE agents ADD COLUMN worktree_paths TEXT`);
+  } catch {
+    /* column exists */
+  }
+  try {
+    database.exec(`ALTER TABLE agent_runs ADD COLUMN run_cwd TEXT`);
+  } catch {
+    /* column exists */
+  }
+}
+
 export function getDb() {
   if (!db) {
-    db = new Database(DB_PATH);
+    const dbPath = resolveDbPath();
+    mkdirSync(dirname(dbPath), { recursive: true });
+    db = new Database(dbPath);
     db.pragma('journal_mode = WAL');
+    patchAgentWorktreeSchema(db);
   }
   return db;
 }
@@ -45,6 +69,7 @@ export function initDb() {
       cli_command TEXT,
       cli_args TEXT DEFAULT '[]',
       working_dir TEXT,
+      worktree_paths TEXT,
       cost_per_1k_tokens REAL DEFAULT 0,
       total_tokens_used INTEGER DEFAULT 0,
       total_cost REAL DEFAULT 0,
@@ -96,6 +121,7 @@ export function initDb() {
       stderr TEXT,
       started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       completed_at DATETIME,
+      run_cwd TEXT,
       FOREIGN KEY (agent_id) REFERENCES agents(id),
       FOREIGN KEY (task_id) REFERENCES tasks(id)
     )

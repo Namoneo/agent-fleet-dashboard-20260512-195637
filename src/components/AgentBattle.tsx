@@ -60,7 +60,7 @@ export function AgentBattle({ projects, agents, onClose }: AgentBattleProps) {
       const task = await taskRes.json();
       
       // Launch agent
-      const runRes = await fetch(`/api/agents/${agentId}/run`, {
+      const runRes = await fetch(`/api/agents/${agentId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

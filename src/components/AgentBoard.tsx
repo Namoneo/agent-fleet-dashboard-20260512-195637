@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Cpu, ArrowRight, Loader2, Terminal } from 'lucide-react';
 import { CreateTaskModal } from './CreateTaskModal';
 import { RunMonitor } from './RunMonitor';
@@ -47,7 +48,7 @@ export function AgentBoard({ agents, projects = [], onTaskCreated }: AgentBoardP
   async function handleLaunch(agent: Agent) {
     setIsLaunching(agent.id);
     try {
-      const res = await fetch(`/api/agents/${agent.id}/run`, {
+      const res = await fetch(`/api/agents/${agent.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -111,7 +112,13 @@ export function AgentBoard({ agents, projects = [], onTaskCreated }: AgentBoardP
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-gray-900 text-sm">{agent.name}</span>
+                      <Link
+                        href={`/agents/${agent.id}`}
+                        className="font-semibold text-gray-900 text-sm hover:text-blue-600"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {agent.name}
+                      </Link>
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${status.bg} ${status.text}`}>
                         {status.label}
                       </span>

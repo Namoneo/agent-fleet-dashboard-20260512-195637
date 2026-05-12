@@ -13,6 +13,29 @@ interface DispatcherProps {
   onClose: () => void;
 }
 
+function agentCwdOptions(agent: any): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  const add = (s?: string | null) => {
+    const t = s?.trim();
+    if (!t || seen.has(t)) return;
+    seen.add(t);
+    out.push(t);
+  };
+  add(agent?.working_dir);
+  try {
+    const arr = JSON.parse(agent?.worktree_paths || '[]');
+    if (Array.isArray(arr)) {
+      for (const x of arr) {
+        if (typeof x === 'string') add(x);
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return out;
+}
+
 export function FleetDispatcher({ projects, agents, templates, onDispatch, onDispatchDag, onClose }: DispatcherProps) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -22,6 +45,7 @@ export function FleetDispatcher({ projects, agents, templates, onDispatch, onDis
     templateId: '',
     workflowId: '',
     agentId: '',
+    cwd: '',
     prompt: '',
     priority: 'medium'
   });
@@ -160,7 +184,14 @@ export function FleetDispatcher({ projects, agents, templates, onDispatch, onDis
               {agents.map(a => (
                 <button 
                   key={a.id}
-                  onClick={() => setConfig({...config, agentId: a.id.toString()})}
+                  onClick={() => {
+                    const opts = agentCwdOptions(a);
+                    setConfig({
+                      ...config,
+                      agentId: a.id.toString(),
+                      cwd: opts[0] ?? '',
+                    });
+                  }}
                   className={`p-3 rounded-xl border transition-all text-center ${
                     config.agentId === a.id.toString() 
                     ? 'border-indigo-500 bg-indigo-500/10 text-white shadow-sm' 
@@ -173,6 +204,34 @@ export function FleetDispatcher({ projects, agents, templates, onDispatch, onDis
               ))}
             </div>
           </div>
+
+          {config.agentId && (() => {
+            const agent = agents.find((a) => a.id.toString() === config.agentId);
+            const opts = agent ? agentCwdOptions(agent) : [];
+            if (opts.length === 0) return null;
+            return (
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-zinc-400 flex items-center gap-2">
+                  <FolderKanban className="w-4 h-4" /> Working directory (repo or worktree)
+                </label>
+                <select
+                  value={config.cwd}
+                  onChange={(e) => setConfig({ ...config, cwd: e.target.value })}
+                  className="w-full p-3 bg-zinc-950 border border-zinc-800 rounded-xl text-sm text-zinc-200 focus:ring-2 focus:ring-indigo-500/50"
+                >
+                  {opts.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-zinc-500">
+                  Paths come from the agent&apos;s primary <code className="text-zinc-400">working_dir</code> plus optional git worktrees in{' '}
+                  <code className="text-zinc-400">worktree_paths</code>.
+                </p>
+              </div>
+            );
+          })()}
 
           {/* Execute Button */}
           <div className="pt-4">

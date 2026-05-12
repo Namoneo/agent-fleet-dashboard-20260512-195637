@@ -20,6 +20,9 @@
 # production
 /build
 
+# local sqlite (see DASHBOARD_DB_PATH to override)
+/.data/
+
 # misc
 .DS_Store
 *.pem

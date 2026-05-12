@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { GitBranch, ExternalLink, ArrowUpRight } from 'lucide-react';
 
 interface ProjectCardProps {
@@ -21,7 +22,10 @@ export function ProjectCard({ project, index, viewMode = 'grid' }: ProjectCardPr
   // List View
   if (viewMode === 'list') {
     return (
-      <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all group">
+      <Link
+        href={`/projects/${project.id}`}
+        className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all group"
+      >
         <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 flex items-center justify-center text-xl flex-shrink-0 group-hover:scale-110 transition-transform">
           {project.icon}
         </div>
@@ -40,24 +44,28 @@ export function ProjectCard({ project, index, viewMode = 'grid' }: ProjectCardPr
             {project.task_count}
           </span>
           <span>🤖 {project.agent_count}</span>
-          <a 
-            href={githubUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              window.open(githubUrl, '_blank', 'noopener,noreferrer');
+            }}
             className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
             title="View on GitHub"
           >
             <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+          </button>
         </div>
-      </div>
+      </Link>
     );
   }
 
   // Grid View (default)
   return (
-    <div
-      className="group bg-white rounded-2xl p-5 border border-gray-100 hover:border-gray-200 hover:shadow-lg hover:shadow-gray-200/50 transition-all duration-300 cursor-pointer animate-slide-up relative overflow-hidden"
+    <Link
+      href={`/projects/${project.id}`}
+      className="group bg-white rounded-2xl p-5 border border-gray-100 hover:border-gray-200 hover:shadow-lg hover:shadow-gray-200/50 transition-all duration-300 cursor-pointer animate-slide-up relative overflow-hidden block"
       style={{ animationDelay: `${delay}s` }}
     >
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 via-purple-50/0 to-pink-50/0 group-hover:from-blue-50/30 group-hover:via-purple-50/20 group-hover:to-pink-50/30 transition-all duration-500" />
@@ -78,16 +86,18 @@ export function ProjectCard({ project, index, viewMode = 'grid' }: ProjectCardPr
               </div>
             </div>
           </div>
-          <a
-            href={githubUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              window.open(githubUrl, '_blank', 'noopener,noreferrer');
+            }}
             className="opacity-0 group-hover:opacity-100 transition-all p-1.5 hover:bg-gray-100 rounded-lg"
             title="View on GitHub"
           >
             <ArrowUpRight className="w-4 h-4 text-gray-400" />
-          </a>
+          </button>
         </div>
 
         <p className="text-sm text-gray-500 mb-4 line-clamp-2 leading-relaxed">{project.description || 'No description'}</p>
@@ -102,6 +112,6 @@ export function ProjectCard({ project, index, viewMode = 'grid' }: ProjectCardPr
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

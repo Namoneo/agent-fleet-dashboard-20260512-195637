@@ -1,7 +1,16 @@
 import Database from 'better-sqlite3';
-import { resolve } from 'path';
+import { mkdirSync } from 'fs';
+import { dirname, join, resolve } from 'path';
 
-const DB_PATH = resolve('/Users/sherzodsanakulov/.openclaw/workspace/project-dashboard', 'dashboard.db');
+const DB_PATH = (() => {
+  const fromEnv = process.env.DASHBOARD_DB_PATH;
+  const p =
+    typeof fromEnv === 'string' && fromEnv.trim() !== ''
+      ? resolve(fromEnv.trim())
+      : join(process.cwd(), '.data', 'dashboard.db');
+  mkdirSync(dirname(p), { recursive: true });
+  return p;
+})();
 console.log('Using DB:', DB_PATH);
 
 const db = new Database(DB_PATH);

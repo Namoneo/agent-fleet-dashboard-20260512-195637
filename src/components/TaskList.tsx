@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { CheckCircle2, Clock, AlertCircle, Circle, ArrowUpRight } from 'lucide-react';
 
@@ -84,9 +85,10 @@ export function TaskList({ tasks }: TaskListProps) {
           const StatusIcon = status.icon;
 
           return (
-            <div
+            <Link
               key={task.id}
-              className="group p-4 hover:bg-gray-50/50 transition-colors cursor-pointer"
+              href={`/tasks/${task.id}`}
+              className="group p-4 hover:bg-gray-50/50 transition-colors cursor-pointer block"
             >
               <div className="flex items-start gap-3">
                 {/* Status icon */}
@@ -126,7 +128,7 @@ export function TaskList({ tasks }: TaskListProps) {
 
                 <ArrowUpRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0 mt-1" />
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>

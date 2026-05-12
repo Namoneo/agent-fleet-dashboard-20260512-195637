@@ -61,6 +61,14 @@ export function runMigrations(db: Database.Database) {
   } catch (e) { /* already exists */ }
 
   try {
+    db.exec(`ALTER TABLE agents ADD COLUMN worktree_paths TEXT`);
+  } catch (e) { /* already exists */ }
+
+  try {
+    db.exec(`ALTER TABLE agent_runs ADD COLUMN run_cwd TEXT`);
+  } catch (e) { /* already exists */ }
+
+  try {
     db.exec(`ALTER TABLE agents ADD COLUMN cost_per_1k_tokens REAL DEFAULT 0`);
   } catch (e) { /* already exists */ }
 
