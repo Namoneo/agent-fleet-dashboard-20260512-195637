@@ -3,6 +3,7 @@ import { getDb } from '@/lib/db';
 import { resolveAgentSpawnCwd } from '@/lib/agent-cwd';
 import { spawn } from 'child_process';
 import { resolve } from 'path';
+import type { Agent } from '@/types';
 
 export async function POST(
   request: Request,
@@ -15,7 +16,7 @@ export async function POST(
   const { task_id, command, cwd, env = {} } = body;
 
   // Get agent config
-  const agent = db.prepare('SELECT * FROM agents WHERE id = ?').get(agentId) as any;
+  const agent = db.prepare('SELECT * FROM agents WHERE id = ?').get(agentId) as Agent | undefined;
   if (!agent) {
     return NextResponse.json({ error: 'Agent not found' }, { status: 404 });
   }

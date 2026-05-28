@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { X, Plus, FolderKanban, Cpu, AlertCircle, CheckCircle2 } from 'lucide-react';
+import type { Project, Agent } from '@/types';
 
 interface CreateTaskModalProps {
-  projects: any[];
-  agents: any[];
-  preSelectedAgent?: any;
+  projects: Project[];
+  agents: Agent[];
+  preSelectedAgent?: Agent | null;
   onClose: () => void;
   onCreated: () => void;
 }

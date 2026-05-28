@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Trash2 } from 'lucide-react';
+import type { Project, Task } from '@/types';
 
 const input =
   'w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
@@ -12,7 +13,7 @@ export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const [data, setData] = useState<{ project: any; tasks: any[] } | null>(null);
+  const [data, setData] = useState<{ project: Project; tasks: Task[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 

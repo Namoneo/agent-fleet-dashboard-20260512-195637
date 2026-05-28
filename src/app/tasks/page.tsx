@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import type { Task } from '@/types';
 
 export default function TasksPage() {
-  const [tasks, setTasks] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [filter, setFilter] = useState<string>('active');
   const [loading, setLoading] = useState(true);
 

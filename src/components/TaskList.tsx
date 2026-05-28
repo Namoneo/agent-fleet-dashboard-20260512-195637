@@ -3,17 +3,8 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { CheckCircle2, Clock, AlertCircle, Circle, ArrowUpRight } from 'lucide-react';
-
-interface Task {
-  id: number;
-  title: string;
-  description?: string;
-  status: string;
-  priority: string;
-  project_name?: string;
-  project_icon?: string;
-  agent_name?: string;
-}
+import type { LucideIcon } from 'lucide-react';
+import type { Task } from '@/types';
 
 interface TaskListProps {
   tasks: Task[];
@@ -29,7 +20,7 @@ export function TaskList({ tasks }: TaskListProps) {
     low: { color: 'text-gray-600', bg: 'bg-gray-100', label: 'Low' },
   };
 
-  const statusConfig: Record<string, { icon: any; color: string; bg: string }> = {
+  const statusConfig: Record<string, { icon: LucideIcon; color: string; bg: string }> = {
     backlog: { icon: Circle, color: 'text-gray-400', bg: 'bg-gray-50' },
     in_progress: { icon: Clock, color: 'text-blue-500', bg: 'bg-blue-50' },
     review: { icon: AlertCircle, color: 'text-purple-500', bg: 'bg-purple-50' },

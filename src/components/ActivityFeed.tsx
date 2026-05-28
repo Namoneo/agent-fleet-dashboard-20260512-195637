@@ -1,22 +1,14 @@
 import { formatDistanceToNow } from 'date-fns';
 import { Activity, GitCommit, MessageSquare, CheckCircle2, AlertTriangle, Rocket, Bell } from 'lucide-react';
-
-interface ActivityItem {
-  id: number;
-  agent_name?: string;
-  action: string;
-  message: string;
-  project_name?: string;
-  task_title?: string;
-  created_at: string;
-}
+import type { LucideIcon } from 'lucide-react';
+import type { Activity as ActivityItem } from '@/types';
 
 interface ActivityFeedProps {
   activities: ActivityItem[];
 }
 
 export function ActivityFeed({ activities }: ActivityFeedProps) {
-  const actionConfig: Record<string, { icon: any; color: string; bg: string }> = {
+  const actionConfig: Record<string, { icon: LucideIcon; color: string; bg: string }> = {
     completed: { icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
     started: { icon: Rocket, color: 'text-blue-600', bg: 'bg-blue-50' },
     blocked: { icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-50' },

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Trash2 } from 'lucide-react';
+import type { Task, Project, Agent } from '@/types';
 
 const input =
   'w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
@@ -12,9 +13,9 @@ export default function TaskDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const [task, setTask] = useState<any>(null);
-  const [projects, setProjects] = useState<any[]>([]);
-  const [agents, setAgents] = useState<any[]>([]);
+  const [task, setTask] = useState<Task | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 

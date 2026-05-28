@@ -2,24 +2,11 @@
 
 import { useState, useMemo } from 'react';
 import { Cpu, GitBranch, FolderKanban, MoreHorizontal, Filter, Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react';
-
-interface Agent {
-  id: number;
-  name: string;
-  type: string;
-  status: 'idle' | 'busy' | 'error' | 'away';
-  skills?: string;
-  cli_command?: string;
-  current_task_title?: string;
-  current_project_name?: string;
-  current_run_id?: number;
-  run_status?: string;
-  run_exit_code?: number;
-}
+import type { Agent, Project } from '@/types';
 
 interface AgentKanbanProps {
   agents: Agent[];
-  projects?: any[];
+  projects?: Project[];
   onTaskCreated?: () => void;
 }
 

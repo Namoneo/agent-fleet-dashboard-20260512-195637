@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { X, Terminal, Loader2 } from 'lucide-react';
+import { X, Terminal } from 'lucide-react';
+import type { AgentOutput, AgentRun, RunStatus } from '@/types';
 
 interface RunMonitorProps {
   runId: string;
@@ -10,26 +11,62 @@ interface RunMonitorProps {
   onClose: () => void;
 }
 
+const ACTIVE_STATUSES: RunStatus[] = ['running', 'pending'];
+
 export function RunMonitor({ runId, agentName, taskTitle, onClose }: RunMonitorProps) {
-  const [logs, setLogs] = useState<{ id: number; type: string; content: string }[]>([]);
-  const [status, setStatus] = useState('running');
+  const [logs, setLogs] = useState<AgentOutput[]>([]);
+  const [status, setStatus] = useState<RunStatus>('running');
+  const [terminating, setTerminating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const isActive = ACTIVE_STATUSES.includes(status);
+
   useEffect(() => {
-    const fetchLogs = async () => {
+    let cancelled = false;
+    const poll = async () => {
       try {
-        const res = await fetch(`/api/runs/${runId}/output`);
-        const data = await res.json();
-        setLogs(data);
+        const [outRes, runRes] = await Promise.all([
+          fetch(`/api/runs/${runId}/output`),
+          fetch(`/api/runs/${runId}`),
+        ]);
+        if (cancelled) return;
+        if (outRes.ok) setLogs(await outRes.json());
+        if (runRes.ok) {
+          const run: AgentRun = await runRes.json();
+          setStatus(run.status);
+        }
       } catch (e) {
-        console.error('Failed to fetch logs', e);
+        if (!cancelled) console.error('Failed to fetch run', e);
       }
     };
 
-    fetchLogs();
-    const interval = setInterval(fetchLogs, 2000);
-    return () => clearInterval(interval);
+    poll();
+    const interval = setInterval(poll, 2000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [runId]);
+
+  async function handleTerminate() {
+    if (!isActive || terminating) return;
+    setTerminating(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/runs/${runId}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `Failed to terminate (${res.status})`);
+      }
+      const run: AgentRun = await res.json();
+      setStatus(run.status);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to terminate run');
+    } finally {
+      setTerminating(false);
+    }
+  }
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -53,8 +90,12 @@ export function RunMonitor({ runId, agentName, taskTitle, onClose }: RunMonitorP
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-800 border border-zinc-700">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs font-medium text-zinc-400 uppercase">Live</span>
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isActive ? 'bg-emerald-500 animate-pulse' : status === 'failed' || status === 'terminated' ? 'bg-red-500' : 'bg-zinc-500'
+                }`}
+              />
+              <span className="text-xs font-medium text-zinc-400 uppercase">{isActive ? 'Live' : status}</span>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-zinc-800 rounded-lg transition-colors text-zinc-400">
               <X className="w-5 h-5" />
@@ -91,11 +132,15 @@ export function RunMonitor({ runId, agentName, taskTitle, onClose }: RunMonitorP
         {/* Footer */}
         <div className="px-6 py-4 border-t border-zinc-800 bg-zinc-900/80 flex items-center justify-between">
           <div className="text-xs text-zinc-500">
-            Run ID: {runId}
+            {error ? <span className="text-red-400">{error}</span> : `Run ID: ${runId}`}
           </div>
           <div className="flex items-center gap-3">
-            <button className="px-4 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-colors">
-              Terminate
+            <button
+              onClick={handleTerminate}
+              disabled={!isActive || terminating}
+              className="px-4 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {terminating ? 'Terminating…' : isActive ? 'Terminate' : 'Terminated'}
             </button>
             <button className="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-colors">
               Open Project

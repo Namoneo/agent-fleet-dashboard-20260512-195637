@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, Terminal } from 'lucide-react';
+import type { Agent, AgentRun } from '@/types';
 
 const input =
   'w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
@@ -11,7 +12,7 @@ const input =
 export default function AgentDetailPage() {
   const params = useParams();
   const id = params.id as string;
-  const [data, setData] = useState<{ agent: any; runs: any[] } | null>(null);
+  const [data, setData] = useState<{ agent: Agent; runs: AgentRun[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [cliArgsStr, setCliArgsStr] = useState('[]');
