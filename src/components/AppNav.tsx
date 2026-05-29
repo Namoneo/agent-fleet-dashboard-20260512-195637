@@ -11,6 +11,7 @@ import {
   GitBranch,
   Activity,
   Terminal,
+  Zap,
 } from 'lucide-react';
 
 const links = [
@@ -18,6 +19,7 @@ const links = [
   { href: '/projects', label: 'Projects', icon: FolderKanban },
   { href: '/agents', label: 'Agents', icon: Bot },
   { href: '/tasks', label: 'Tasks', icon: CheckSquare2 },
+  { href: '/runs', label: 'Runs', icon: Zap },
   { href: '/templates', label: 'Templates', icon: FileText },
   { href: '/workflows', label: 'Workflows', icon: GitBranch },
   { href: '/activity', label: 'Activity', icon: Activity },

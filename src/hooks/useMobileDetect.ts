@@ -14,10 +14,11 @@ export function useMobileDetect() {
     checkMobile();
     window.addEventListener('resize', checkMobile);
 
-    // Check if installed as PWA
+    // Check if installed as PWA (`standalone` is a non-standard iOS Safari flag)
+    const navigatorWithStandalone = window.navigator as Navigator & { standalone?: boolean };
     setIsStandalone(
-      window.matchMedia('(display-mode: standalone)').matches || 
-      (window.navigator as any).standalone === true
+      window.matchMedia('(display-mode: standalone)').matches ||
+      navigatorWithStandalone.standalone === true
     );
 
     return () => window.removeEventListener('resize', checkMobile);

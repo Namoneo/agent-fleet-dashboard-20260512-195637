@@ -12,10 +12,20 @@ import { FleetDispatcher } from './FleetDispatcher';
 import { AgentBattle } from './AgentBattle';
 import { DagCanvas } from './DagCanvas';
 import { Plus, LayoutDashboard, FolderKanban, Bot, CheckSquare2, Bell, List, LayoutGrid, Rocket, Swords, Columns, Kanban } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import type {
+  DashboardData,
+  TaskTemplate,
+  Project,
+  Task,
+  Agent,
+  DispatchPayload,
+  DagDispatchPayload,
+} from '@/types';
 
 export function Dashboard() {
-  const [data, setData] = useState<any>(null);
-  const [templates, setTemplates] = useState<any[]>([]);
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [templates, setTemplates] = useState<TaskTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDispatcher, setShowDispatcher] = useState(false);
@@ -54,7 +64,7 @@ export function Dashboard() {
     }
   }
 
-  async function handleDispatch(payload: any) {
+  async function handleDispatch(payload: DispatchPayload) {
     // Create a task first
     const taskRes = await fetch('/api/tasks', {
       method: 'POST',
@@ -84,7 +94,7 @@ export function Dashboard() {
     fetchData();
   }
 
-  async function handleDispatchDag(payload: any) {
+  async function handleDispatchDag(payload: DagDispatchPayload) {
     // Create a DAG execution
     const executionRes = await fetch('/api/dag-executions', {
       method: 'POST',
@@ -125,13 +135,16 @@ export function Dashboard() {
     );
   }
 
-  const { projects, agents, tasks, activities } = data || {};
-  const activeProjects = projects?.filter((p: any) => p.status === 'active') || [];
-  const activeTasks = tasks?.filter((t: any) => t.status !== 'done') || [];
-  const completedTasks = tasks?.filter((t: any) => t.status === 'done') || [];
-  const idleAgents = agents?.filter((a: any) => a.status === 'idle') || [];
+  const projects: Project[] = data?.projects ?? [];
+  const agents: Agent[] = data?.agents ?? [];
+  const tasks: Task[] = data?.tasks ?? [];
+  const activities = data?.activities ?? [];
+  const activeProjects = projects.filter((p) => p.status === 'active');
+  const activeTasks = tasks.filter((t) => t.status !== 'done');
+  const completedTasks = tasks.filter((t) => t.status === 'done');
+  const idleAgents = agents.filter((a) => a.status === 'idle');
 
-  const displayedProjects = showAllProjects ? projects : projects?.slice(0, 9);
+  const displayedProjects = showAllProjects ? projects : projects.slice(0, 9);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-100">
@@ -269,13 +282,13 @@ export function Dashboard() {
               {/* Projects Display */}
               {projectView === 'grid' ? (
                 <div className="grid grid-cols-3 gap-4">
-                  {displayedProjects?.map((project: any, i: number) => (
+                  {displayedProjects?.map((project: Project, i: number) => (
                     <ProjectCard key={project.id} project={project} index={i} viewMode="grid" />
                   ))}
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {displayedProjects?.map((project: any, i: number) => (
+                  {displayedProjects?.map((project: Project, i: number) => (
                     <ProjectCard key={project.id} project={project} index={i} viewMode="list" />
                   ))}
                 </div>
@@ -404,7 +417,7 @@ function StatCard({
 }: {
   label: string;
   value: number;
-  icon: any;
+  icon: LucideIcon;
   color: string;
   trend: string;
   suffix?: string;

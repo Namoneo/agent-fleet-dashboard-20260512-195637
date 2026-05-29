@@ -1,28 +1,29 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { MobileProjectCard } from './MobileProjectCard';
 import { MobileAgentCard } from './MobileAgentCard';
 import { MobileTaskCard } from './MobileTaskCard';
+import type { DashboardData, Project, Agent, Task } from '@/types';
 
-export function MobileLayout({ data }: { data: any }) {
+export function MobileLayout({ data }: { data: DashboardData }) {
   const [activeTab, setActiveTab] = useState('home');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showCreateTask, setShowCreateTask] = useState(false);
-  const [pageData, setPageData] = useState(data);
+  const [pageData, setPageData] = useState<DashboardData>(data);
+  const touchStartY = useRef(0);
 
   const { projects = [], agents = [], tasks = [] } = pageData || {};
 
   // Pull to refresh
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     // Store start position for pull to refresh
-    (window as any).touchStartY = e.touches[0].clientY;
+    touchStartY.current = e.touches[0].clientY;
   }, []);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     const touchEndY = e.changedTouches[0].clientY;
-    const touchStartY = (window as any).touchStartY || 0;
-    if (touchEndY - touchStartY > 150 && window.scrollY < 10) {
+    if (touchEndY - touchStartY.current > 150 && window.scrollY < 10) {
       setIsRefreshing(true);
       fetch('/api/dashboard')
         .then(res => res.json())
@@ -195,10 +196,10 @@ function NavButton({ icon, label, isActive, onClick }: { icon: string; label: st
   );
 }
 
-function HomeView({ projects, agents, tasks, onNavigate }: { projects: any[], agents: any[], tasks: any[], onNavigate: (tab: string) => void }) {
-  const activeProjects = projects.filter((p: any) => p.status === 'active');
-  const activeTasks = tasks.filter((t: any) => t.status !== 'done');
-  const idleAgents = agents.filter((a: any) => a.status === 'idle');
+function HomeView({ projects, agents, tasks, onNavigate }: { projects: Project[], agents: Agent[], tasks: Task[], onNavigate: (tab: string) => void }) {
+  const activeProjects = projects.filter((p) => p.status === 'active');
+  const activeTasks = tasks.filter((t) => t.status !== 'done');
+  const idleAgents = agents.filter((a) => a.status === 'idle');
 
   return (
     <div className="space-y-6">
@@ -227,7 +228,7 @@ function HomeView({ projects, agents, tasks, onNavigate }: { projects: any[], ag
           </button>
         </div>
         <div className="space-y-3">
-          {projects.slice(0, 5).map((project: any) => (
+          {projects.slice(0, 5).map((project) => (
             <MobileProjectCard key={project.id} project={project} />
           ))}
         </div>
@@ -242,7 +243,7 @@ function HomeView({ projects, agents, tasks, onNavigate }: { projects: any[], ag
           </button>
         </div>
         <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4">
-          {agents.map((agent: any) => (
+          {agents.map((agent) => (
             <MobileAgentCard key={agent.id} agent={agent} />
           ))}
         </div>
@@ -257,7 +258,7 @@ function HomeView({ projects, agents, tasks, onNavigate }: { projects: any[], ag
           </button>
         </div>
         <div className="space-y-3">
-          {activeTasks.slice(0, 3).map((task: any) => (
+          {activeTasks.slice(0, 3).map((task) => (
             <MobileTaskCard key={task.id} task={task} />
           ))}
         </div>
@@ -266,53 +267,53 @@ function HomeView({ projects, agents, tasks, onNavigate }: { projects: any[], ag
   );
 }
 
-function ProjectsView({ projects, onBack }: { projects: any[], onBack: () => void }) {
+function ProjectsView({ projects, onBack }: { projects: Project[], onBack: () => void }) {
   return (
     <div className="space-y-3">
-      <button 
+      <button
         onClick={onBack}
         className="flex items-center gap-2 text-zinc-400 text-sm mb-4 active:opacity-70"
       >
         ← Back
       </button>
       <h2 className="text-lg font-bold mb-4">All Projects ({projects.length})</h2>
-      {projects.map((project: any) => (
+      {projects.map((project) => (
         <MobileProjectCard key={project.id} project={project} />
       ))}
     </div>
   );
 }
 
-function AgentsView({ agents, onBack }: { agents: any[], onBack: () => void }) {
+function AgentsView({ agents, onBack }: { agents: Agent[], onBack: () => void }) {
   return (
     <div className="space-y-3">
-      <button 
+      <button
         onClick={onBack}
         className="flex items-center gap-2 text-zinc-400 text-sm mb-4 active:opacity-70"
       >
         ← Back
       </button>
       <h2 className="text-lg font-bold mb-4">Agent Fleet ({agents.length})</h2>
-      {agents.map((agent: any) => (
+      {agents.map((agent) => (
         <MobileAgentCard key={agent.id} agent={agent} fullWidth />
       ))}
     </div>
   );
 }
 
-function TasksView({ tasks, onBack }: { tasks: any[], onBack: () => void }) {
-  const activeTasks = tasks.filter((t: any) => t.status !== 'done');
-  
+function TasksView({ tasks, onBack }: { tasks: Task[], onBack: () => void }) {
+  const activeTasks = tasks.filter((t) => t.status !== 'done');
+
   return (
     <div className="space-y-3">
-      <button 
+      <button
         onClick={onBack}
         className="flex items-center gap-2 text-zinc-400 text-sm mb-4 active:opacity-70"
       >
         ← Back
       </button>
       <h2 className="text-lg font-bold mb-4">Tasks ({activeTasks.length} active)</h2>
-      {activeTasks.map((task: any) => (
+      {activeTasks.map((task) => (
         <MobileTaskCard key={task.id} task={task} />
       ))}
     </div>

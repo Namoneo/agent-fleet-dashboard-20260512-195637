@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react';
 import { Dashboard } from '@/components/Dashboard';
 import { MobileLayout } from '@/components/MobileLayout';
 import { useMobileDetect } from '@/hooks/useMobileDetect';
+import type { DashboardData } from '@/types';
 
 export default function Home() {
   const { isMobile } = useMobileDetect();
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<DashboardData | null>(null);
 
   // Register service worker for PWA
   useEffect(() => {

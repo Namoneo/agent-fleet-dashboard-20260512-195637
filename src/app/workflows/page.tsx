@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import type { DagWorkflow } from '@/types';
 
 export default function WorkflowsPage() {
-  const [workflows, setWorkflows] = useState<any[]>([]);
+  const [workflows, setWorkflows] = useState<DagWorkflow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

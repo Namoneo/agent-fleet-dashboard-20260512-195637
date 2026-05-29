@@ -1,4 +1,6 @@
-export function MobileAgentCard({ agent, fullWidth = false }: { agent: any; fullWidth?: boolean }) {
+import type { Agent } from '@/types';
+
+export function MobileAgentCard({ agent, fullWidth = false }: { agent: Agent; fullWidth?: boolean }) {
   const statusColors: Record<string, { bg: string; text: string; dot: string }> = {
     idle: { bg: 'bg-emerald-500/20', text: 'text-emerald-400', dot: 'bg-emerald-500' },
     busy: { bg: 'bg-amber-500/20', text: 'text-amber-400', dot: 'bg-amber-500' },

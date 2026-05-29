@@ -76,7 +76,7 @@ export async function GET(request: Request) {
 }
 
 // Helper function to broadcast updates to all connected clients
-export function broadcastUpdate(executionId: number, data: any) {
+export function broadcastUpdate(executionId: number, data: unknown) {
   const execClients = clients.get(executionId);
   if (!execClients) return;
 
@@ -86,7 +86,7 @@ export function broadcastUpdate(executionId: number, data: any) {
   execClients.forEach(controller => {
     try {
       controller.enqueue(encoder.encode(message));
-    } catch (e) {
+    } catch {
       // Client disconnected, will be cleaned up on next abort
     }
   });

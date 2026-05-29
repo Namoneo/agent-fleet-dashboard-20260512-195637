@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, Terminal } from 'lucide-react';
+import type { AgentRun, AgentOutput } from '@/types';
 
 export default function RunDetailPage() {
   const params = useParams();
   const id = params.id as string;
-  const [run, setRun] = useState<any>(null);
-  const [logs, setLogs] = useState<any[]>([]);
+  const [run, setRun] = useState<AgentRun | null>(null);
+  const [logs, setLogs] = useState<AgentOutput[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

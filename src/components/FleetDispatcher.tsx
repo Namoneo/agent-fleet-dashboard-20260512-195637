@@ -3,17 +3,18 @@
 import { useState } from 'react';
 import { X, Rocket, FolderKanban, Cpu, LayoutGrid, Zap, CheckCircle2, Loader2, MessageSquare, GitBranch } from 'lucide-react';
 import { DagWorkflowSelector } from './DagWorkflowSelector';
+import type { Project, Agent, TaskTemplate, DispatchPayload, DagDispatchPayload } from '@/types';
 
 interface DispatcherProps {
-  projects: any[];
-  agents: any[];
-  templates: any[];
-  onDispatch: (payload: any) => Promise<void>;
-  onDispatchDag?: (payload: any) => Promise<void>;
+  projects: Project[];
+  agents: Agent[];
+  templates: TaskTemplate[];
+  onDispatch: (payload: DispatchPayload) => Promise<void>;
+  onDispatchDag?: (payload: DagDispatchPayload) => Promise<void>;
   onClose: () => void;
 }
 
-function agentCwdOptions(agent: any): string[] {
+function agentCwdOptions(agent: Agent | undefined): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
   const add = (s?: string | null) => {

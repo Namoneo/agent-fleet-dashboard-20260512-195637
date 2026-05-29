@@ -59,7 +59,7 @@ export async function PUT(
   }
 
   const updates: string[] = [];
-  const values: any[] = [];
+  const values: unknown[] = [];
 
   if (status) {
     updates.push('status = ?');

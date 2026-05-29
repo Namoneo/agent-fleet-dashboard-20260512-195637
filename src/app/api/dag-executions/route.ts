@@ -50,10 +50,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Workflow not found' }, { status: 404 });
   }
 
-  const dag = JSON.parse(workflow.dag_json);
+  const dag = JSON.parse(workflow.dag_json) as { title: string; tasks: { id: string }[] };
   const initialCanvasData = canvas_data || {
     workflow_title: dag.title,
-    tasks: dag.tasks.map((t: any) => ({
+    tasks: dag.tasks.map((t) => ({
       id: t.id,
       status: 'PENDING',
       output: '',

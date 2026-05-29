@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { X, Swords, Trophy, GitCompare, Clock, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import type { Project, Agent, AgentOutput } from '@/types';
 
 interface AgentBattleProps {
-  projects: any[];
-  agents: any[];
+  projects: Project[];
+  agents: Agent[];
   onClose: () => void;
 }
 
@@ -43,7 +44,8 @@ export function AgentBattle({ projects, agents, onClose }: AgentBattleProps) {
     // Launch both agents simultaneously
     for (const agentId of [config.agent1Id, config.agent2Id]) {
       const agent = agents.find(a => a.id.toString() === agentId);
-      
+      if (!agent) continue;
+
       // Create task
       const taskRes = await fetch('/api/tasks', {
         method: 'POST',
@@ -90,7 +92,7 @@ export function AgentBattle({ projects, agents, onClose }: AgentBattleProps) {
         runs.map(async (run) => {
           const res = await fetch(`/api/runs/${run.runId}/output`);
           const logs = await res.json();
-          return { ...run, logs: logs.map((l: any) => l.content), duration: Date.now() - startTime };
+          return { ...run, logs: logs.map((l: AgentOutput) => l.content), duration: Date.now() - startTime };
         })
       );
       

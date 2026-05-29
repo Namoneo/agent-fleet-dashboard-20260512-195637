@@ -26,6 +26,41 @@ function patchAgentWorktreeSchema(database: Database.Database) {
   }
 }
 
+/**
+ * Indexes on foreign keys and hot filter/sort columns. All use
+ * `IF NOT EXISTS` and `CREATE INDEX` on a missing table is wrapped in
+ * try/catch, so this is safe to run on every connection.
+ */
+function ensureIndexes(database: Database.Database) {
+  const statements = [
+    // tasks: filtered by project, agent, and status; sorted by created_at
+    `CREATE INDEX IF NOT EXISTS idx_tasks_project_id ON tasks(project_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_tasks_assigned_agent_id ON tasks(assigned_agent_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)`,
+    // agent_runs: looked up by agent/task, sorted by started_at, joined on status
+    `CREATE INDEX IF NOT EXISTS idx_agent_runs_agent_id ON agent_runs(agent_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_agent_runs_task_id ON agent_runs(task_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_agent_runs_status ON agent_runs(status)`,
+    `CREATE INDEX IF NOT EXISTS idx_agent_runs_started_at ON agent_runs(started_at DESC)`,
+    // agent_outputs: always queried by run_id, ordered by created_at
+    `CREATE INDEX IF NOT EXISTS idx_agent_outputs_run_id ON agent_outputs(run_id)`,
+    // activities: filtered by agent/task/project, sorted by created_at
+    `CREATE INDEX IF NOT EXISTS idx_activities_agent_id ON activities(agent_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_activities_task_id ON activities(task_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_activities_project_id ON activities(project_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_activities_created_at ON activities(created_at DESC)`,
+    // dag_executions: looked up by workflow
+    `CREATE INDEX IF NOT EXISTS idx_dag_executions_workflow_id ON dag_executions(workflow_id)`,
+  ];
+  for (const sql of statements) {
+    try {
+      database.exec(sql);
+    } catch {
+      /* table not created yet — initDb() will create indexes after schema setup */
+    }
+  }
+}
+
 export function getDb() {
   if (!db) {
     const dbPath = resolveDbPath();
@@ -33,6 +68,7 @@ export function getDb() {
     db = new Database(dbPath);
     db.pragma('journal_mode = WAL');
     patchAgentWorktreeSchema(db);
+    ensureIndexes(db);
   }
   return db;
 }
@@ -177,6 +213,9 @@ export function initDb() {
     )
   `);
 
+  // Indexes (tables now exist; ensureIndexes in getDb runs before initDb on a fresh DB)
+  ensureIndexes(db);
+
   // Seed if empty
   const projectCount = db.prepare('SELECT COUNT(*) as count FROM projects').get() as { count: number };
   if (projectCount.count === 0) {
@@ -247,7 +286,9 @@ function seedInitialData(db: Database.Database) {
 }
 
 function updateAgentCommands(db: Database.Database) {
-  const agents = db.prepare('SELECT id, name, type FROM agents WHERE cli_command IS NULL').all() as any[];
+  const agents = db
+    .prepare('SELECT id, name, type FROM agents WHERE cli_command IS NULL')
+    .all() as { id: number; name: string; type: string }[];
 
   const commandMap: Record<string, { cmd: string; args: string[] }> = {
     'Claude Code': { cmd: 'claude', args: ['--print', '--permission-mode', 'bypassPermissions'] },

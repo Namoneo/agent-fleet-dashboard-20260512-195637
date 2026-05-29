@@ -5,19 +5,11 @@ import Link from 'next/link';
 import { Cpu, ArrowRight, Loader2, Terminal } from 'lucide-react';
 import { CreateTaskModal } from './CreateTaskModal';
 import { RunMonitor } from './RunMonitor';
-
-interface Agent {
-  id: number;
-  name: string;
-  type: string;
-  status: 'idle' | 'busy' | 'error' | 'away';
-  skills?: string;
-  cli_command?: string;
-}
+import type { Agent, Project } from '@/types';
 
 interface AgentBoardProps {
   agents: Agent[];
-  projects?: any[];
+  projects?: Project[];
   onTaskCreated?: () => void;
 }
 

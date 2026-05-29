@@ -1,4 +1,6 @@
-export function MobileTaskCard({ task }: { task: any }) {
+import type { Task } from '@/types';
+
+export function MobileTaskCard({ task }: { task: Task }) {
   const priorityColors: Record<string, string> = {
     low: 'bg-zinc-700 text-zinc-400',
     medium: 'bg-amber-500/20 text-amber-400',

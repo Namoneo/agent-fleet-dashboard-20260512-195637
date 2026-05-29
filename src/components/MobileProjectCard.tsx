@@ -1,4 +1,6 @@
-export function MobileProjectCard({ project }: { project: any }) {
+import type { Project } from '@/types';
+
+export function MobileProjectCard({ project }: { project: Project }) {
   const statusColors: Record<string, string> = {
     active: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
     paused: 'bg-amber-500/20 text-amber-400 border-amber-500/30',

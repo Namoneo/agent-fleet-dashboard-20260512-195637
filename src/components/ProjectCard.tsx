@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { GitBranch, ExternalLink, ArrowUpRight } from 'lucide-react';
+import type { Project } from '@/types';
 
 interface ProjectCardProps {
-  project: any;
+  project: Project;
   index: number;
   viewMode?: 'grid' | 'list';
 }

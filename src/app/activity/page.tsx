@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import type { Activity } from '@/types';
 
 export default function ActivityPage() {
-  const [data, setData] = useState<{ activities: any[] } | null>(null);
+  const [data, setData] = useState<{ activities: Activity[] } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
